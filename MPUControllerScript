@@ -1,0 +1,168 @@
+using System.Collections.Generic;
+using UnityEngine;
+using System.Collections;
+using System;
+using System.IO.Ports;
+
+public class MPUControllerScript : MonoBehaviour
+{
+    SerialPort stream;
+
+    public GameObject target;
+    
+    float acc_normalizer_factor = 0.00025f;
+    float gyro_normalizer_factor = 1.0f / 32768.0f;   // 32768 is max value captured during test on imu
+    public bool switch_axes = false;
+    public bool inv_axe1 = false;
+    public bool inv_axe2 = false;
+
+    float ax = 0;
+    float ay = 0;
+    float az = 0;
+
+    float curr_angle_x = 0;
+    float curr_angle_y = 0;
+    float curr_angle_z = 0;
+
+    float curr_offset_x = 0;
+    float curr_offset_y = 0;
+    float curr_offset_z = 0;
+
+    // Increase the speed/influence rotation
+    public float factor = 7;
+    public float offset_pos_factor = 4.0f;
+
+
+    public bool enableRotation;
+    public bool enableTranslation;
+
+    // SELECT YOUR COM PORT AND BAUDRATE
+    public string port = "COM3";
+    public int baudrate = 38400;
+    int readTimeout = 20;
+
+    //Constants for transmit fonction.
+    float[] axlist = new float[2];
+    float[] offsetlist = new float[2];
+
+    // Start is called before the first frame update
+    void Start()
+    {
+        // open port. Be shure in unity edit > project settings > player is NET2.0 and not NET2.0Subset
+        stream = new SerialPort("\\\\.\\" + port, baudrate);
+        stream.Close();
+
+
+        try
+        {
+            stream.ReadTimeout = readTimeout;
+        }
+        catch (System.IO.IOException ioe)
+        {
+            Debug.Log("IOException: " + ioe.Message);
+        }
+
+        stream.Open();
+    }
+
+    // Update is called once per frame
+    void Update()
+    {
+
+        string dataString = "null received";
+
+        if (stream.IsOpen)
+        {
+            try
+            {
+                dataString = stream.ReadLine();
+                //Debug.Log("RCV_ : " + dataString);
+            }
+            catch (System.IO.IOException ioe)
+            {
+                Debug.Log("IOException: " + ioe.Message);
+            }
+
+        }
+        else
+            dataString = "NOT OPEN";
+        //Debug.Log("RCV_ : " + dataString);
+         
+        if (!dataString.Equals("NOT OPEN"))
+        {
+            // recived string is  like  "accx;accy;accz;gyrox;gyroy;gyroz"
+            char splitChar = ' ';
+            string[] dataRaw = dataString.Split(splitChar);
+
+            // normalized accelerometer values
+            ax = Int32.Parse(dataRaw[0]) * acc_normalizer_factor;
+            ay = Int32.Parse(dataRaw[1]) * acc_normalizer_factor;
+            az = Int32.Parse(dataRaw[2]) * acc_normalizer_factor;
+
+
+            // normalized gyrocope values
+            float gx = Int32.Parse(dataRaw[3]) * gyro_normalizer_factor;
+            float gy = Int32.Parse(dataRaw[4]) * gyro_normalizer_factor;
+            float gz = Int32.Parse(dataRaw[5]) * gyro_normalizer_factor;
+
+            // prevent 
+            if (Mathf.Abs(ax) - 0.2 < 0) ax = 0;
+            if (Mathf.Abs(ay) - 0.2 < 0) ay = 0;
+            if (Mathf.Abs(az) - 0.2 < 0) az = 0;
+
+            curr_offset_x += ax * offset_pos_factor * Time.deltaTime;
+            curr_offset_y += ay * offset_pos_factor * Time.deltaTime;
+            curr_offset_z += 0; // The IMU module have value of z axis of 16600 caused by gravity
+
+
+            // printing of offsets:
+            //Debug.Log("OffsetX = " + curr_offset_x + "OffsetY = " + curr_offset_y + " Ax =" + ax + " Ay =" + ay);
+
+            // prevent little noise effect
+            if (Mathf.Abs(gx) < 0.025f) gx = 0f;
+            if (Mathf.Abs(gy) < 0.025f) gy = 0f;
+            if (Mathf.Abs(gz) < 0.025f) gz = 0f;
+
+            curr_angle_x += gx;
+            curr_angle_y += gy;
+            curr_angle_z += gz;
+
+            if (enableTranslation) target.transform.position = new Vector3(curr_offset_x, curr_offset_z, curr_offset_y);
+            if (enableRotation) target.transform.rotation = Quaternion.Euler(curr_angle_x * factor, -curr_angle_z * factor, curr_angle_y * factor);
+        }
+
+    }
+    public float[] TransmissionsAxes()
+    {
+        if (switch_axes) // function that'll switch axis if inversion_axes = true
+        { float temp_val = ax;
+            ax = ay;
+            ay = temp_val;
+        }
+        if (inv_axe1) ax = -ax;
+        if (inv_axe2) ay = -ay;
+        float[] to_send = { ax, ay };
+        return (to_send);
+    }
+
+}
+
+
+//to use this script : 
+//create an object in game ie a cube that will not be shawn and called "MPUController"
+
+//in the player object add this code : (in public class: )
+// *******************
+//       public GameObject MPU; // and in unity, in MPU fied of the player object, swip MPU Controller Object.
+//
+//
+// if you want to use axis :
+// *******************
+//        MPUControllerScript mpucomponent = MPU.GetComponent<MPUControllerScript>();
+//        float[] tableau_ax_ay = mpucomponent.TransmissionsAxes();
+//        
+//and tableau_ax_ay[0] will be first axis, tableau_ax_ay[0] will be second one
+// in unity, check swich axes to reverse ax and ay
+// in unity , check Inv_Axe 1 or 2 to ... reverse the use of number.
+
+
