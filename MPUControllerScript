@@ -15,10 +15,11 @@ public class MPUControllerScript : MonoBehaviour
     public bool switch_axes = false;
     public bool inv_axe1 = false;
     public bool inv_axe2 = false;
+    public bool moyennageNeeded = false;
 
-    float ax = 0;
-    float ay = 0;
-    float az = 0;
+    public float ax = 0;
+    public float ay = 0;
+    public float az = 0;
 
     float curr_angle_x = 0;
     float curr_angle_y = 0;
@@ -27,6 +28,23 @@ public class MPUControllerScript : MonoBehaviour
     float curr_offset_x = 0;
     float curr_offset_y = 0;
     float curr_offset_z = 0;
+
+
+    // float variables for meaning :
+    float axM1 = 0;
+    float axM2 = 0;
+    float axM3 = 0;
+    float axM4 = 0;
+    float axM5 = 0;
+    public float moyax = 0;
+
+    float ayM1 = 0;
+    float ayM2 = 0;
+    float ayM3 = 0;
+    float ayM4 = 0;
+    float ayM5 = 0;
+    public float moyay = 0;
+
 
     // Increase the speed/influence rotation
     public float factor = 7;
@@ -129,10 +147,30 @@ public class MPUControllerScript : MonoBehaviour
 
             if (enableTranslation) target.transform.position = new Vector3(curr_offset_x, curr_offset_z, curr_offset_y);
             if (enableRotation) target.transform.rotation = Quaternion.Euler(curr_angle_x * factor, -curr_angle_z * factor, curr_angle_y * factor);
+            
+            if (moyennageNeeded)
+            {
+                axM5 = axM4;
+                axM4 = axM3;
+                axM3 = axM2;
+                axM2 = axM1;
+                axM1 = ax;
+
+                moyax = (axM1 + axM2 + axM3 + axM4 + axM5) / 5;
+
+                ayM5 = ayM4;
+                ayM4 = ayM3;
+                ayM3 = ayM2;
+                ayM2 = ayM1;
+                ayM1 = ay;
+
+                moyay = (ayM1 + ayM2 + ayM3 + ayM4 + ayM5) / 5;
+            }
         }
 
     }
-    public float[] TransmissionsAxes()
+    public float[] TransmissionsAxes() // warning fuction to avoid, it can cause some bug whan try to catch information not available
+        // i keep it for old apps.
     {
         if (switch_axes) // function that'll switch axis if inversion_axes = true
         { float temp_val = ax;
@@ -141,28 +179,25 @@ public class MPUControllerScript : MonoBehaviour
         }
         if (inv_axe1) ax = -ax;
         if (inv_axe2) ay = -ay;
-        float[] to_send = { ax, ay };
+        float[] to_send = { ax, ay, az };
+
         return (to_send);
     }
+    public float[] TransmissionsAngles() // warning fuction to avoid, it can cause some bug whan try to catch information not available
+    {
+        // i keep it for old apps.
+        float[] to_sendA = { curr_angle_x, curr_angle_y, curr_angle_z };
+        return (to_sendA);
+    }
+
 
 }
 
 
 //to use this script : 
-//create an object in game ie a cube that will not be shawn and called "MPUController"
+//1.create an object in game ie a cube that will not be shawn and called "MPUController" and use this script for this object.
 
 //in the player object add this code : (in public class: )
-// *******************
-//       public GameObject MPU; // and in unity, in MPU fied of the player object, swip MPU Controller Object.
-//
-//
-// if you want to use axis :
-// *******************
-//        MPUControllerScript mpucomponent = MPU.GetComponent<MPUControllerScript>();
-//        float[] tableau_ax_ay = mpucomponent.TransmissionsAxes();
-//        
-//and tableau_ax_ay[0] will be first axis, tableau_ax_ay[0] will be second one
-// in unity, check swich axes to reverse ax and ay
-// in unity , check Inv_Axe 1 or 2 to ... reverse the use of number.
+
 
 
