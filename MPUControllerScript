@@ -169,7 +169,7 @@ public class MPUControllerScript : MonoBehaviour
         }
 
     }
-    public float[] TransmissionsAxes() // warning fuction to avoid, it can cause some bug whan try to catch information not available
+    public float[] TransmissionsAxes() // warning to avoid, it can cause some bug whan try to catch information not available
         // i keep it for old apps.
     {
         if (switch_axes) // function that'll switch axis if inversion_axes = true
@@ -183,7 +183,7 @@ public class MPUControllerScript : MonoBehaviour
 
         return (to_send);
     }
-    public float[] TransmissionsAngles() // warning fuction to avoid, it can cause some bug whan try to catch information not available
+    public float[] TransmissionsAngles() // warning to avoid, it can cause some bug whan try to catch information not available
     {
         // i keep it for old apps.
         float[] to_sendA = { curr_angle_x, curr_angle_y, curr_angle_z };
@@ -197,7 +197,27 @@ public class MPUControllerScript : MonoBehaviour
 //to use this script : 
 //1.create an object in game ie a cube that will not be shawn and called "MPUController" and use this script for this object.
 
-//in the player object add this code : (in public class: )
+//2.in the to-move object add this code : 
 
+// (in public class: )
+// *******************
+//       public GameObject MPU; // and in unity, in MPU fied of the player object, swip MPU Controller Object.
+//
+//
+// (in start())
+// *******************
+// MPU = GameObject.FindWithTag("MPUController");
+
+// (in Update or fixedupdate())
+// *******************
+//        MPUControllerScript mpucomponent = MPU.GetComponent<MPUControllerScript>();
+////and you can grab informations from controller with "mpucomponont.<variable>"
+//// ie: 
+// float ax = mpucomponent.ax;
+// float ay = mpucomponent.ay;
+// float moyax = mpucomponent.moyax;
+// float moyay = mpucomponent.moyay;
+//
+//
 
 
