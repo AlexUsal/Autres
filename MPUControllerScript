@@ -7,9 +7,7 @@ using System.IO.Ports;
 public class MPUControllerScript : MonoBehaviour
 {
     SerialPort stream;
-
-    public GameObject target;
-    
+        
     float acc_normalizer_factor = 0.00025f;
     float gyro_normalizer_factor = 1.0f / 32768.0f;   // 32768 is max value captured during test on imu
     public bool switch_axes = false;
@@ -51,8 +49,6 @@ public class MPUControllerScript : MonoBehaviour
     public float offset_pos_factor = 4.0f;
 
 
-    public bool enableRotation;
-    public bool enableTranslation;
 
     // SELECT YOUR COM PORT AND BAUDRATE
     public string port = "COM3";
@@ -145,8 +141,7 @@ public class MPUControllerScript : MonoBehaviour
             curr_angle_y += gy;
             curr_angle_z += gz;
 
-            if (enableTranslation) target.transform.position = new Vector3(curr_offset_x, curr_offset_z, curr_offset_y);
-            if (enableRotation) target.transform.rotation = Quaternion.Euler(curr_angle_x * factor, -curr_angle_z * factor, curr_angle_y * factor);
+
             
             if (moyennageNeeded)
             {
@@ -166,6 +161,9 @@ public class MPUControllerScript : MonoBehaviour
 
                 moyay = (ayM1 + ayM2 + ayM3 + ayM4 + ayM5) / 5;
             }
+            // examples of calc that can be made (but better in tomove object ?)
+            //transform.position = new Vector3(curr_offset_x, curr_offset_z, curr_offset_y);
+            //transform.rotation = Quaternion.Euler(curr_angle_x * factor, -curr_angle_z * factor, curr_angle_y * factor);
         }
 
     }
